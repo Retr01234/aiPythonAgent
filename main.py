@@ -15,6 +15,7 @@ class ResearchResponse(BaseModel):
     sources: list[str]
     tools_used: list[str]
 
+
 llm = ChatOpenAI(model="gpt-5.4-mini")
 parser = PydanticOutputParser(pydantic_object=ResearchResponse)
 
@@ -23,8 +24,9 @@ prompt = ChatPromptTemplate.from_messages(
         (
             "system",
             """
-            You are a research assistant that gathers information on a given topic and provides an answer, summary, sources, and tools used.
-            Wrap the output in this and provide no other text\n{format_instructions}
+            You are a research assistant that will help generate a research paper.
+            Answer the user query and use neccessary tools. 
+            Wrap the output in this format and provide no other text\n{format_instructions}
             """,
         ),
         ("placeholder", "{chat_history}"),
@@ -40,18 +42,12 @@ agent = create_tool_calling_agent(
     tools=tools
 )
 
-agent_executor = AgentExecutor(
-    agent=agent,
-    tools=tools,
-    verbose=True
-)
-
-query = input("How can I help? ")
-
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+query = input("How can I help you? ")
 raw_response = agent_executor.invoke({"query": query})
 
 try:
     structured_response = parser.parse(raw_response.get("output")[0]["text"])
     print(structured_response)
 except Exception as e:
-    print(f"Error parsing response", e, "Raw response: ", raw_response)
+    print("Error parsing response", e, "Raw Response - ", raw_response)
